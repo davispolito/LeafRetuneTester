@@ -9,11 +9,14 @@ StatefulPlugin::StatefulPlugin() : chowdsp::PluginBase<State> (&undoManager)
 //    presetsSettings.emplace (*presetManager,
 //        *pluginSettings,
 //        juce::File::getSpecialLocation (juce::File::userDocumentsDirectory).getChildFile ("Chowdhury DSP/Presets/Stateful Plugin"));
+    LEAF_init(&leaf, 44100.0f, dummy_memory, 32, [](){return (float)rand()/RAND_MAX;});
+    leaf.clearOnAllocation = 1;
+    tCycle_init(&myOsc, &leaf);
 }
 
 void StatefulPlugin::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    juce::ignoreUnused (sampleRate, samplesPerBlock);
+    LEAF_setSampleRate(&leaf, sampleRate);
 }
 
 void StatefulPlugin::processAudioBlock (juce::AudioBuffer<float>& buffer)
@@ -23,30 +26,14 @@ void StatefulPlugin::processAudioBlock (juce::AudioBuffer<float>& buffer)
 
     const auto numSamples = buffer.getNumSamples();
 
-    float leftGain = 1.0f, rightGain = 1.0f;
-
-    const auto mode = state.params.mode->getIndex();
-    if (mode == 0)
+    tCycle_setFreq(&myOsc, state.params.freqParam->getCurrentValue());
+    for (int i = 0; i< numSamples; i++)
     {
-        leftGain = rightGain = state.params.levelParams.percent->getCurrentValue();
+        float outputSamp = tCycle_tick(&myOsc) * 0.25f;
+        buffer.setSample(0, i, outputSamp);
     }
-    else if (mode == 1)
-    {
-        leftGain = rightGain = juce::Decibels::decibelsToGain (state.params.levelParams.gain->getCurrentValue());
-    }
-    else if (mode == 2)
-    {
-        leftGain = state.params.levelParams.percent->getCurrentValue();
-        rightGain = juce::Decibels::decibelsToGain (state.params.levelParams.gain->getCurrentValue());
-    }
-    else if (mode == 3)
-    {
-        rightGain = state.params.levelParams.percent->getCurrentValue();
-        leftGain = juce::Decibels::decibelsToGain (state.params.levelParams.gain->getCurrentValue());
-    }
-
-    buffer.applyGain (0, 0, numSamples, leftGain);
-    buffer.applyGain (1, 0, numSamples, rightGain);
+    //buffer.applyGain (0, 0, numSamples, leftGain);
+    //buffer.applyGain (1, 0, numSamples, rightGain);
 }
 
 juce::AudioProcessorEditor* StatefulPlugin::createEditor()

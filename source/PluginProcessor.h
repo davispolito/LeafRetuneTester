@@ -27,12 +27,22 @@ struct PluginParameterState : chowdsp::ParamHolder
 {
     PluginParameterState()
     {
-        add (levelParams, mode, onOff);
+        add (levelParams, mode, onOff, freqParam);
     }
 
     LevelParams levelParams;
-    chowdsp::ChoiceParameter::Ptr mode { juce::ParameterID { "mode", 100 }, "Mode", juce::StringArray { "Percent", "Gain", "Percent / Gain", "Gain / Percent" }, 2 };
+    chowdsp::ChoiceParameter::Ptr mode
+        { juce::ParameterID { "mode", 100 }, "Mode", juce::StringArray { "Percent", "Gain", "Percent / Gain", "Gain / Percent" }, 2 };
     chowdsp::BoolParameter::Ptr onOff { juce::ParameterID { "on_off", 100 }, "On/Off", true };
+
+    chowdsp::FloatParameter::Ptr freqParam {
+        juce::ParameterID { "Frequency", 100 },
+        "Frequency",
+        chowdsp::ParamUtils::createNormalisableRange (100.0f, 1000.0f, 300.0f),
+        300.0f,
+        &chowdsp::ParamUtils::floatValToString,
+        &chowdsp::ParamUtils::stringToFloatVal
+    };
 };
 
 struct PluginNonParameterState : chowdsp::NonParamState
@@ -42,7 +52,7 @@ struct PluginNonParameterState : chowdsp::NonParamState
         addStateValues ({ &editorBounds });
     }
 
-    chowdsp::StateValue<juce::Point<int>> editorBounds { "editor_bounds", { 300, 500 } };
+    chowdsp::StateValue<juce::Point<int>> editorBounds { "editor_bounds", { 600, 1000 } };
 };
 
 using State = chowdsp::PluginStateImpl<PluginParameterState, PluginNonParameterState>;
@@ -62,7 +72,9 @@ public:
 
     chowdsp::SharedPluginSettings pluginSettings;
     //std::optional<chowdsp::presets::frontend::SettingsInterface> presetsSettings;
-
+    LEAF leaf;
+    tCycle myOsc;
+    char dummy_memory[32];
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StatefulPlugin)
 };
