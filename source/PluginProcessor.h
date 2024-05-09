@@ -79,11 +79,18 @@ public:
     LEAF leaf;
     tCycle myOsc;
     tSimpleRetune shifter;
+    tAttackDetection ad;
     chowdsp::AudioFileSaveLoadHelper saveLoadHelper;
+
+
     juce::AudioBuffer<float> _buffer;
+    juce::AudioBuffer<float> _ringBuffer;
+    int ringRead;
+    int ringWrite;
     int _num_samples;
     int index;
     char dummy_memory[32];
+    int prevAttack;
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StatefulPlugin)
 };

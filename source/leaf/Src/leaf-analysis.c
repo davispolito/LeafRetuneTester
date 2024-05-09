@@ -394,6 +394,8 @@ int tAttackDetection_detect(tAttackDetection* const ad, Lfloat *in)
     int result;
     
     atkdtk_envelope(ad, in);
+
+
     
     if(a->env >= a->prevAmp*2) //2 times greater = 6dB increase
         result = 1;
