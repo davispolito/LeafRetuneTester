@@ -27,19 +27,23 @@ struct PluginParameterState : chowdsp::ParamHolder
 {
     PluginParameterState()
     {
-        add (levelParams, mode, onOff, freqParam);
+        add (freqParam, shiftParam);
     }
-
-    LevelParams levelParams;
-    chowdsp::ChoiceParameter::Ptr mode
-        { juce::ParameterID { "mode", 100 }, "Mode", juce::StringArray { "Percent", "Gain", "Percent / Gain", "Gain / Percent" }, 2 };
-    chowdsp::BoolParameter::Ptr onOff { juce::ParameterID { "on_off", 100 }, "On/Off", true };
 
     chowdsp::FloatParameter::Ptr freqParam {
         juce::ParameterID { "Frequency", 100 },
         "Frequency",
         chowdsp::ParamUtils::createNormalisableRange (100.0f, 1000.0f, 300.0f),
         300.0f,
+        &chowdsp::ParamUtils::floatValToString,
+        &chowdsp::ParamUtils::stringToFloatVal
+    };
+
+    chowdsp::FloatParameter::Ptr shiftParam {
+        juce::ParameterID { "Shift", 100 },
+        "Shift",
+        chowdsp::ParamUtils::createNormalisableRange (0.25f, 4.0f, 1.0f),
+        1.0f,
         &chowdsp::ParamUtils::floatValToString,
         &chowdsp::ParamUtils::stringToFloatVal
     };
@@ -74,6 +78,11 @@ public:
     //std::optional<chowdsp::presets::frontend::SettingsInterface> presetsSettings;
     LEAF leaf;
     tCycle myOsc;
+    tSimpleRetune shifter;
+    chowdsp::AudioFileSaveLoadHelper saveLoadHelper;
+    juce::AudioBuffer<float> _buffer;
+    int _num_samples;
+    int index;
     char dummy_memory[32];
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StatefulPlugin)
