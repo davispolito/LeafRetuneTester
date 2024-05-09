@@ -13,7 +13,7 @@ include(PamplejuceMacOS)
 # This is the internal name of the project and the name of JUCE's shared code target
 # Note: This cannot have spaces (it may be 2024, but you can't have it all!)
 # Worry not, JUCE's PRODUCT_NAME can have spaces (and is what DAWs display)
-set(PROJECT_NAME "Pamplejuce")
+set(PROJECT_NAME "retunetester")
 
 # Worry not, JUCE's PRODUCT_NAME can have spaces (and is what DAWs will display)
 # You can also just have it be the same thing as PROJECT_NAME
@@ -48,9 +48,11 @@ add_subdirectory(JUCE)
 # Add any other modules you want modules here, before the juce_add_plugin call
 # juce_add_module(modules/my_module)
 
+#add_subdirectory(LEAF/leaf)
 # This adds the melatonin inspector module
 add_subdirectory (modules/melatonin_inspector)
 
+add_subdirectory(chowdsp_utils)
 # See `docs/CMake API.md` in the JUCE repo for all config options
 juce_add_plugin("${PROJECT_NAME}"
     # Icons for the standalone app
@@ -73,7 +75,7 @@ juce_add_plugin("${PROJECT_NAME}"
     # Note: this must have at least one upper-case character
     PLUGIN_CODE P001
     FORMATS "${FORMATS}"
-
+        JUCE_MODULE_AVAILABLE_chowdsp_plugin_state=1
     # The name of your final executable
     # This is how it's listed in the DAW
     # This can be different from PROJECT_NAME and can have spaces!
@@ -93,7 +95,7 @@ target_compile_features(SharedCode INTERFACE cxx_std_20)
 # Just ensure you employ CONFIGURE_DEPENDS so the build system picks up changes
 # If you want to appease the CMake gods and avoid globs, manually add files like so:
 # set(SourceFiles Source/PluginEditor.h Source/PluginProcessor.h Source/PluginEditor.cpp Source/PluginProcessor.cpp)
-file(GLOB_RECURSE SourceFiles CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/source/*.h")
+file(GLOB_RECURSE SourceFiles CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/source/*.c" "${CMAKE_CURRENT_SOURCE_DIR}/source/*.h")
 target_sources(SharedCode INTERFACE ${SourceFiles})
 
 # Adds a BinaryData target for embedding assets into the binary
@@ -121,7 +123,19 @@ target_compile_definitions(SharedCode
     # JucePlugin_Name is for some reason doesn't use the nicer PRODUCT_NAME
     PRODUCT_NAME_WITHOUT_VERSION="Pamplejuce"
 )
+set(JUCE_DEPENDENCIES
 
+        chowdsp::chowdsp_plugin_base
+        chowdsp::chowdsp_plugin_state
+        chowdsp::chowdsp_sources
+        chowdsp::chowdsp_plugin_utils
+        chowdsp::chowdsp_gui
+        chowdsp::chowdsp_dsp_utils
+        chowdsp::chowdsp_data_structures
+        juce::juce_audio_utils
+        juce::juce_dsp
+        #juce::juce_open_gl
+)
 # Link to any other modules you added (with juce_add_module) here!
 # Usually JUCE modules must have PRIVATE visibility
 # See https://github.com/juce-framework/JUCE/blob/master/docs/CMake%20API.md#juce_add_module
@@ -131,6 +145,7 @@ target_link_libraries(SharedCode
     INTERFACE
     Assets
     melatonin_inspector
+        ${JUCE_DEPENDENCIES}
     juce_audio_utils
     juce_audio_processors
     juce_dsp
@@ -138,7 +153,8 @@ target_link_libraries(SharedCode
     juce_gui_extra
     juce::juce_recommended_config_flags
     juce::juce_recommended_lto_flags
-    juce::juce_recommended_warning_flags)
+    juce::juce_recommended_warning_flags
+        )
 
 # Link the JUCE plugin targets our SharedCode target
 target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
@@ -154,3 +170,5 @@ include(Benchmarks)
 
 # Pass some config to GA (like our PRODUCT_NAME)
 include(GitHubENV)
+
+juce_generate_juce_header("${PROJECT_NAME}")

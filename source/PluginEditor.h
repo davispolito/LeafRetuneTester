@@ -1,25 +1,33 @@
 #pragma once
 
 #include "PluginProcessor.h"
-#include "BinaryData.h"
-#include "melatonin_inspector/melatonin_inspector.h"
+//#include "chowdsp_gui/PluginComponents/chowdsp_ParametersView.h"
+#include <chowdsp_gui/chowdsp_gui.h>
 
-//==============================================================================
-class PluginEditor : public juce::AudioProcessorEditor
+class PluginEditor : public juce::AudioProcessorEditor,
+                     private juce::ChangeListener
 {
 public:
-    explicit PluginEditor (PluginProcessor&);
+    explicit PluginEditor (StatefulPlugin& plug);
     ~PluginEditor() override;
 
-    //==============================================================================
-    void paint (juce::Graphics&) override;
     void resized() override;
 
 private:
-    // This reference is provided as a quick way for your editor to
-    // access the processor object that created it.
-    PluginProcessor& processorRef;
-    std::unique_ptr<melatonin::Inspector> inspector;
-    juce::TextButton inspectButton { "Inspect the UI" };
+    void changeListenerCallback (juce::ChangeBroadcaster* source) override;
+
+    StatefulPlugin& plugin;
+
+    chowdsp::ParametersViewEditor paramsView;
+
+    //chowdsp::presets::frontend::FileInterface presetsFileInterface { plugin.getPresetManager(), &(*plugin.presetsSettings) };
+    //chowdsp::presets::PresetsComponent presetsComp { plugin.getPresetManager(), &presetsFileInterface };
+
+    void refreshUndoRedoButtons();
+    juce::TextButton undoButton { "UNDO" };
+    juce::TextButton redoButton { "REDO" };
+
+    chowdsp::ScopedCallbackList editorStateCallbacks;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };

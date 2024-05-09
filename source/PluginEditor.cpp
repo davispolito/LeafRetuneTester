@@ -1,48 +1,70 @@
 #include "PluginEditor.h"
 
-PluginEditor::PluginEditor (PluginProcessor& p)
-    : AudioProcessorEditor (&p), processorRef (p)
+using namespace std::string_view_literals;
+
+PluginEditor::PluginEditor (StatefulPlugin& plug) : juce::AudioProcessorEditor (plug),
+                                                    plugin (plug),
+                                                    paramsView (plug, plug.getState(), plug.getState().params)
 {
-    juce::ignoreUnused (processorRef);
+    addAndMakeVisible (paramsView);
+    //addAndMakeVisible (presetsComp);
 
-    addAndMakeVisible (inspectButton);
-
-    // this chunk of code instantiates and opens the melatonin inspector
-    inspectButton.onClick = [&] {
-        if (!inspector)
-        {
-            inspector = std::make_unique<melatonin::Inspector> (*this);
-            inspector->onClose = [this]() { inspector.reset(); };
-        }
-
-        inspector->setVisible (true);
+    addAndMakeVisible (undoButton);
+    undoButton.onClick = [this]
+    {
+        plugin.undoManager.undo();
     };
 
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
-    setSize (400, 300);
+    addAndMakeVisible (redoButton);
+    redoButton.onClick = [this]
+    {
+        plugin.undoManager.redo();
+    };
+
+    plugin.undoManager.addChangeListener (this);
+    refreshUndoRedoButtons();
+
+    setResizable (true, true);
+
+    const auto setSizeFromState = [this]
+    {
+        const auto& stateSize = plugin.getState().nonParams.editorBounds.get();
+        setSize (stateSize.x, stateSize.y);
+    };
+    setSizeFromState();
+
+    editorStateCallbacks += {
+        plugin.getState().addNonParameterListener (plugin.getState().nonParams.editorBounds, [setSizeFromState]
+            { setSizeFromState(); }),
+    };
 }
 
 PluginEditor::~PluginEditor()
 {
+    plugin.undoManager.removeChangeListener (this);
 }
 
-void PluginEditor::paint (juce::Graphics& g)
+void PluginEditor::changeListenerCallback (juce::ChangeBroadcaster* source)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
+    if (source != &plugin.undoManager)
+        return;
 
-    auto area = getLocalBounds();
-    g.setColour (juce::Colours::white);
-    g.setFont (16.0f);
-    auto helloWorld = juce::String ("Hello from ") + PRODUCT_NAME_WITHOUT_VERSION + " v" VERSION + " running in " + CMAKE_BUILD_TYPE;
-    g.drawText (helloWorld, area.removeFromTop (150), juce::Justification::centred, false);
+    refreshUndoRedoButtons();
+}
+
+void PluginEditor::refreshUndoRedoButtons()
+{
+    undoButton.setEnabled (plugin.undoManager.canUndo());
+    redoButton.setEnabled (plugin.undoManager.canRedo());
 }
 
 void PluginEditor::resized()
 {
-    // layout the positions of your child components here
-    auto area = getLocalBounds();
-    area.removeFromBottom(50);
-    inspectButton.setBounds (getLocalBounds().withSizeKeepingCentre(100, 50));
+    auto bounds = getLocalBounds();
+    paramsView.setBounds (bounds.removeFromTop (getHeight() - 70));
+    //presetsComp.setBounds (bounds.removeFromTop (40).removeFromLeft (180));
+    undoButton.setBounds (bounds.removeFromLeft (80));
+    redoButton.setBounds (bounds.removeFromLeft (80));
+
+    plugin.getState().nonParams.editorBounds = getLocalBounds().getBottomRight();
 }

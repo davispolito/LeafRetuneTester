@@ -10,3 +10,6 @@
 	path = cmake
 	url = https://github.com/sudara/cmake-includes.git
 	branch = main
+[submodule "chowdsp_utils"]
+	path = chowdsp_utils
+	url = git@github.com:Chowdhury-DSP/chowdsp_utils.git
