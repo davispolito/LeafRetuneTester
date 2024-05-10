@@ -91,6 +91,7 @@ public:
     int index;
     char dummy_memory[32];
     int prevAttack;
+    int attackCount;
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StatefulPlugin)
 };

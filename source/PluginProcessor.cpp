@@ -19,8 +19,9 @@ StatefulPlugin::StatefulPlugin() : chowdsp::PluginBase<State> (&undoManager)
     leaf.clearOnAllocation = 1;
     tCycle_init(&myOsc, &leaf);
     tSimpleRetune_init(&shifter, 1, 100.0f, 1000.0f, 512, &leaf);
-    tAttackDetection_init(&ad, 1, 1, 100, &leaf);
+    tAttackDetection_init(&ad, 1, 10, 1000, &leaf);
     prevAttack = 0.0f;
+    attackCount = 0;
 }
 
 void StatefulPlugin::prepareToPlay (double sampleRate, int samplesPerBlock)
@@ -44,11 +45,7 @@ void StatefulPlugin::processAudioBlock (juce::AudioBuffer<float>& buffer)
 
         if ((attack > 0) && (prevAttack == 0))
         {
-            DBG(attack);
-            DBG(" ");
-            DBG(" ");
-            DBG(" ");
-            DBG(" ");
+            DBG(attackCount++);
         }
         prevAttack = attack;
 

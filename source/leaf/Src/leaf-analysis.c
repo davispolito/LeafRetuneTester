@@ -397,7 +397,7 @@ int tAttackDetection_detect(tAttackDetection* const ad, Lfloat *in)
 
 
     
-    if(a->env >= a->prevAmp*2) //2 times greater = 6dB increase
+    if(a->env >= a->prevAmp*1.04) //2 times greater = 6dB increase
         result = 1;
     else
         result = 0;
